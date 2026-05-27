@@ -48,7 +48,7 @@ export default function App() {
   const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
     };
 
@@ -285,6 +285,16 @@ Your task is to take a patient's unstructured descriptions of their chronic issu
           }
 
           .custom-cursor-ball {
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+          }
+        }
+
+        @media (prefers-contrast: more) {
+          .custom-cursor-ball {
+            background: rgba(255,255,255,0.95);
+            border: 2px solid rgba(0,0,0,0.85);
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.65);
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
           }
