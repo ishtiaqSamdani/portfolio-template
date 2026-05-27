@@ -28,7 +28,55 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  // Deep, high-contrast brand color presets to ensure perfect text readability
+  const [currentTheme, setCurrentTheme] = useState('blue');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('chronic');
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Booking Flow States
+  const [bookingStep, setBookingStep] = useState(1);
+  const [selectedService, setSelectedService] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [clientInfo, setClientInfo] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [isBooked, setIsBooked] = useState(false);
+
+  // Video modal state
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
+  // Interactive mouse position tracking for premium custom cursor
+  const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
+  const [isHovering, setIsHovering] = useState(false);
+
+  // --- GEMINI CO-PILOT STATE VARIABLES ---
+  const [aiTool, setAiTool] = useState('translator'); 
+  const [aiInput, setAiInput] = useState('');
+  const [aiResult, setAiResult] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleMouseOver = (e) => {
+      if (e.target.closest('a, button, [role="button"], input, textarea, select')) {
+        setIsHovering(true);
+      } else {
+        setIsHovering(false);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseover', handleMouseOver);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseover', handleMouseOver);
+    };
+  }, []);
+
   const themes = {
     blue: {
       primary: 'bg-blue-600 hover:bg-blue-700 text-white',
@@ -40,7 +88,12 @@ export default function App() {
       focusRing: 'focus:ring-blue-600',
       badge: 'bg-blue-100 text-blue-950 font-bold',
       borderFocus: 'focus:border-blue-600',
-      buttonBg: 'bg-blue-600 hover:bg-blue-700 text-white'
+      buttonBg: 'bg-blue-600 hover:bg-blue-700 text-white',
+      // Dynamic Theme checks & Dots
+      checkBg: 'bg-blue-100',
+      checkText: 'text-blue-900',
+      dotActive: 'bg-blue-500',
+      highlightText: 'text-blue-400'
     },
     emerald: {
       primary: 'bg-emerald-600 hover:bg-emerald-700 text-white',
@@ -52,7 +105,12 @@ export default function App() {
       focusRing: 'focus:ring-emerald-600',
       badge: 'bg-emerald-100 text-emerald-950 font-bold',
       borderFocus: 'focus:border-emerald-600',
-      buttonBg: 'bg-emerald-600 hover:bg-emerald-700 text-white'
+      buttonBg: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+      // Dynamic Theme checks & Dots
+      checkBg: 'bg-emerald-100',
+      checkText: 'text-emerald-900',
+      dotActive: 'bg-emerald-500',
+      highlightText: 'text-emerald-400'
     },
     royal: {
       primary: 'bg-purple-600 hover:bg-purple-700 text-white',
@@ -64,41 +122,17 @@ export default function App() {
       focusRing: 'focus:ring-purple-600',
       badge: 'bg-purple-100 text-purple-950 font-bold',
       borderFocus: 'focus:border-purple-600',
-      buttonBg: 'bg-purple-600 hover:bg-purple-700 text-white'
+      buttonBg: 'bg-purple-600 hover:bg-purple-700 text-white',
+      // Dynamic Theme checks & Dots
+      checkBg: 'bg-purple-100',
+      checkText: 'text-purple-900',
+      dotActive: 'bg-purple-500',
+      highlightText: 'text-purple-400'
     }
   };
 
-  const [currentTheme, setCurrentTheme] = useState('blue');
   const theme = themes[currentTheme];
 
-  // Responsive mobile menu state
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Active tab state for doctor's clinical focus
-  const [activeTab, setActiveTab] = useState('chronic');
-
-  // Interactive Testimonial Slider State
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  // Booking Flow States
-  const [bookingStep, setBookingStep] = useState(1);
-  const [selectedService, setSelectedService] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [clientInfo, setClientInfo] = useState({ name: '', email: '', phone: '', notes: '' });
-  const [isBooked, setIsBooked] = useState(false);
-
-  // Video modal simulation states
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-
-  // --- GEMINI CO-PILOT STATE VARIABLES ---
-  const [aiTool, setAiTool] = useState('translator'); // 'translator' or 'prep-memo'
-  const [aiInput, setAiInput] = useState('');
-  const [aiResult, setAiResult] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState('');
-
-  // Custom homeopathic medical data
   const doctorProfile = {
     name: "Dr. Devendra Kumar, BHMS, MD (Homeo)",
     title: "Senior Consultant Classical Homeopath & Wellness Expert",
@@ -143,7 +177,6 @@ export default function App() {
     { id: 'constitutional', title: 'Constitutional Mapping', desc: 'In-depth evaluation of your physical, mental, and emotional health parameters to locate your primary Simillimum.', price: '₹800' },
   ];
 
-  // Testimonial slider controllers
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % testimonials.length);
   };
@@ -152,9 +185,8 @@ export default function App() {
     setCurrentSlide((prev) => (prev - 1 + testimonials.length) % testimonials.length);
   };
 
-  // --- GEMINI API INTEGRATION & RETRY LOGIC WITH EXPONENTIAL BACKOFF ---
   const callGeminiAPI = async (prompt, systemPrompt) => {
-    const apiKey = ""; // Managed dynamically by execution environment
+    const apiKey = ""; 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
     
     let attempt = 0;
@@ -165,32 +197,23 @@ export default function App() {
       try {
         const response = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
             systemInstruction: { parts: [{ text: systemPrompt }] }
           })
         });
 
-        if (!response.ok) {
-          throw new Error(`Server returned status code: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Server returned status code: ${response.status}`);
 
         const data = await response.json();
         const extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         
-        if (extractedText) {
-          return extractedText;
-        } else {
-          throw new Error("Received empty response structure from LLM");
-        }
+        if (extractedText) return extractedText;
+        else throw new Error("Received empty response structure from LLM");
       } catch (err) {
         attempt++;
-        if (attempt >= maxRetries) {
-          throw new Error("Unable to establish secure link with Gemini. Please try again.");
-        }
+        if (attempt >= maxRetries) throw new Error("Unable to establish secure link with Gemini. Please try again.");
         await new Promise((resolve) => setTimeout(resolve, delays[attempt - 1]));
       }
     }
@@ -215,18 +238,11 @@ Format your response using bold, highly readable headers:
 1. **Clinical Summary** (Simplify the clinical report terminology, explain it using warm, clear everyday metaphors).
 2. **The Holistic Root-Cause View** (Briefly describe how constitutional holistic homeopathy views and aims to stimulate healing for these symptoms without harsh side effects).
 3. **Important Questions for Dr. Devendra** (Provide 3 thoughtful, tailored questions to ask during their next appointment).
-4. **Hopeful Healing Compass** (Provide an optimistic, warm, and comforting concluding thought).
-Strict Rule: Maintain high readability. Add a subtle disclaimer that this AI translation does not replace a detailed clinical examination by Dr. Devendra.`;
+4. **Hopeful Healing Compass** (Provide an optimistic, warm, and comforting concluding thought).`;
     } else {
       prompt = `Help me structure a beautiful clinical intake checklist based on these chronic symptoms, timeline, and daily stresses:\n\n"${aiInput}"`;
       systemPrompt = `You are Dr. Devendra Kumar's senior clinical intake assistant.
-Your task is to take a patient's unstructured descriptions of their chronic issues, stress triggers, and thermal/food preferences, and structure them into a pristine Consultation Preparation Sheet.
-Homeopathy values physical, emotional, and systemic symptoms combined. Format your output using clear markdown headers:
-1. **Symptom Profile & Timeline** (Organize physical symptoms chronologically).
-2. **Constitutional & Lifestyle Factors** (Highlight emotional triggers, stress, or patterns mentioned).
-3. **Crucial Intake Notes for the Clinic Staff** (A high-density summary designed for Dr. Devendra to scan in under 30 seconds).
-4. **Preparing for your Consultation** (List 3 things the patient should bring or monitor before their visit).
-Tone: Reassuring, extremely clear, and organized for high-trust professional readability.`;
+Your task is to take a patient's unstructured descriptions of their chronic issues, stress triggers, and thermal/food preferences, and structure them into a pristine Consultation Preparation Sheet.`;
     }
 
     try {
@@ -260,6 +276,28 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
   return (
     <div className="min-h-screen bg-[#FDFDFD] font-sans text-slate-900 selection:bg-slate-900 selection:text-white transition-colors duration-500">
       
+      {/* Dynamic Cursor Hider Style - Disables standard mouse pointer to enable ultra-premium feedback on desktop */}
+      <style>{`
+        @media (min-width: 1024px) {
+          body, a, button, select, input, textarea, [role="button"] {
+            cursor: none !important;
+          }
+        }
+      `}</style>
+
+      {/* Custom Interactive Floating Cursor */}
+      <div 
+        className="hidden lg:block fixed pointer-events-none z-50 transition-transform duration-100 ease-out -translate-x-1/2 -translate-y-1/2"
+        style={{ 
+          left: `${mousePos.x}px`, 
+          top: `${mousePos.y}px`,
+          transform: `translate(-50%, -50%) scale(${isHovering ? 1.5 : 1})`
+        }}
+      >
+        <div className={`w-8 h-8 rounded-full border border-current opacity-30 animate-pulse transition-all duration-300 ${theme.primaryText}`} />
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-current ${theme.primaryText}`} />
+      </div>
+
       {/* SELLER CONTROL BAR - Dynamic Theme Switcher & Value Prop */}
       <div className="bg-slate-950 text-slate-300 py-3.5 px-4 text-xs sticky top-0 z-50 border-b border-slate-800 shadow-md backdrop-blur-md bg-opacity-95">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -310,8 +348,8 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
               </div>
             </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-8 text-[15px] font-extrabold text-slate-100">
+            {/* Desktop Navigation - Upgraded to lg:flex to ensure it renders on laptops correctly */}
+            <nav className="hidden lg:flex items-center gap-8 text-[15px] font-extrabold text-slate-100">
               <a href="#about" className="hover:text-white transition-colors">About</a>
               <a href="#specialties" className="hover:text-white transition-colors">Treatments</a>
               <a href="#ai-copilot" className="hover:text-white transition-colors">✨ Patient AI Companion</a>
@@ -320,7 +358,7 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
             </nav>
 
             {/* Desktop CTA Action buttons */}
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden lg:flex items-center gap-6">
               <a 
                 href="tel:+918900192" 
                 className="flex items-center gap-2 text-[15px] font-black text-white hover:text-slate-200"
@@ -336,10 +374,10 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
               </a>
             </div>
 
-            {/* Mobile Menu Trigger */}
+            {/* Mobile Menu Trigger - Now hidden properly on lg (1024px) screens to prioritize desktop navbar */}
             <button 
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2.5 text-white bg-slate-900 bg-opacity-65 rounded-xl hover:bg-opacity-80 transition-all border border-slate-800"
+              className="lg:hidden p-2.5 text-white bg-slate-900 bg-opacity-65 rounded-xl hover:bg-opacity-80 transition-all border border-slate-800"
             >
               <Menu className="h-6 w-6" />
             </button>
@@ -347,13 +385,20 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
         </header>
 
         {/* HERO SECTION - Embedded straight inside the dark wrapper container */}
+        {}
         <section className="relative z-20 pt-8 px-6 md:px-12">
+          {/* 
+            FIXED SQUISHING:
+            Layout switches to 12 columns only on lg: screens.
+            Text copy takes lg:col-span-7 (spacious layout).
+            Doctor Portrait takes lg:col-span-5.
+            Value stack cards wrap below them seamlessly on tablet & 1024px screens, and only align on the right on xl screens!
+          */}
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
-            {/* Left Column: Overlapping Trust Elements & Copy */}
-            <div className="lg:col-span-5 text-white space-y-6">
+            {/* Left Column: Copy */}
+            <div className="col-span-12 lg:col-span-7 xl:col-span-5 text-white space-y-6">
               
-              {/* Trust Badge - Solid and high-contrast against gradient */}
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white bg-opacity-10 border border-white border-opacity-20 text-xs font-black tracking-wide">
                 <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
                 <span className="text-slate-100">99.4% Patient Recovery Rate</span>
@@ -369,7 +414,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 {doctorProfile.tagline}
               </p>
 
-              {/* Quick Actions */}
               <div className="flex flex-wrap gap-4 pt-2">
                 <a 
                   href="#booking" 
@@ -387,7 +431,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 </a>
               </div>
 
-              {/* Micro Trust Proof Section */}
               <div className="flex items-center gap-4 bg-slate-900 bg-opacity-65 p-4 rounded-2xl border border-white border-opacity-15 max-w-md">
                 <div className="flex -space-x-3">
                   <img className="inline-block h-10 w-10 rounded-full ring-2 ring-slate-900 object-cover" src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150" alt="Patient" />
@@ -402,65 +445,31 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
 
             </div>
 
-            {/* Central Column: Elegant Real-Photo Mockup (High contrast & Depth) */}
-            <div className="lg:col-span-4 relative flex justify-center">
+            {/* Central Column: Elegant Real-Photo Mockup */}
+            {}
+            <div className="col-span-12 lg:col-span-5 xl:col-span-4 flex justify-center">
               <div className="relative w-full max-w-[340px] md:max-w-[380px] aspect-[4/5] rounded-[2.5rem] overflow-hidden group shadow-2xl bg-slate-900 border border-white border-opacity-20 p-3">
-                
-                {/* Doctor Cutout Wrapper */}
                 <div className="w-full h-full rounded-[2rem] overflow-hidden bg-slate-950 relative flex items-end justify-center">
-                  
-                  {/* Modern Aesthetic Wash behind doctor photo */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent z-10 pointer-events-none" />
-                  
-                  {/* Real Medical Consultant Portrait Image */}
                   <img 
                     className="w-full h-full object-cover z-0 transition-transform duration-700 group-hover:scale-105" 
                     src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=600" 
                     alt="Dr. Devendra Kumar" 
                   />
-
-                  {/* Overlap CTA Badge */}
                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[90%]">
                     <div className="bg-slate-900 bg-opacity-95 text-white py-3.5 px-4 rounded-xl text-center border border-slate-800 shadow-xl">
                       <span className="text-[10px] uppercase tracking-widest text-emerald-400 block mb-0.5 font-bold">BHMS, MD (Homeo)</span>
                       <span className="text-xs font-black text-slate-100">Classical Constitutional Expert</span>
                     </div>
                   </div>
-
                 </div>
               </div>
-
-              {/* Decorative Floating trust Card 1 - Patient Satisfaction */}
-              <div className="absolute -left-12 top-1/4 bg-slate-900 p-4 rounded-2xl shadow-2xl border border-white border-opacity-10 hidden sm:flex items-center gap-3 max-w-[200px] z-20">
-                <div className="p-2.5 bg-emerald-950 rounded-xl text-emerald-400">
-                  <Heart className="h-6 w-6 fill-emerald-500 text-emerald-400" />
-                </div>
-                <div>
-                  <span className="text-xs text-slate-300 block font-bold">Remedies</span>
-                  <span className="text-sm font-black text-white">100% Non-Toxic</span>
-                </div>
-              </div>
-
-              {/* Decorative Floating trust Card 2 - Video trigger */}
-              <div 
-                onClick={() => setIsVideoPlaying(true)}
-                className="absolute -right-12 bottom-1/4 bg-slate-900 p-3.5 rounded-2xl shadow-2xl border border-white border-opacity-10 hidden sm:flex items-center gap-3 cursor-pointer hover:scale-105 transition-all max-w-[220px] z-20"
-              >
-                <div className={`p-2.5 ${theme.accentBg} ${theme.primaryText} rounded-xl`}>
-                  <Play className="h-5 w-5 fill-current" />
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase tracking-wider text-slate-300 font-bold block">Patient Video</span>
-                  <span className="text-xs font-black text-white">How Therapy Works</span>
-                </div>
-              </div>
-
             </div>
 
-            {/* Right Column: Editorial Value Stack (High Contrast against Gradient background) */}
-            <div className="lg:col-span-3 flex flex-col gap-8 z-20 text-white">
+            {/* Right Column: Dynamic Non-Squishing Value Stack */}
+            {}
+            <div className="col-span-12 xl:col-span-3 grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-6 text-white">
               
-              {/* Value Block 1 */}
               <div className="bg-slate-900/60 p-6 rounded-2xl border border-white border-opacity-10">
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-xl bg-white/10 ${theme.heroTextAccent} shrink-0`}>
@@ -475,7 +484,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 </div>
               </div>
 
-              {/* Value Block 2 */}
               <div className="bg-slate-900/60 p-6 rounded-2xl border border-white border-opacity-10">
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-xl bg-white/10 ${theme.heroTextAccent} shrink-0`}>
@@ -490,7 +498,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 </div>
               </div>
 
-              {/* Value Block 3 */}
               <div className="bg-slate-900/60 p-6 rounded-2xl border border-white border-opacity-10">
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-xl bg-white/10 ${theme.heroTextAccent} shrink-0`}>
@@ -512,7 +519,7 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
 
       </div>
 
-      {/* MOBILE DRAWER (For navigation) */}
+      {/* MOBILE DRAWER */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-slate-950 bg-opacity-95 backdrop-blur-lg z-50 flex flex-col justify-between p-8 animate-fade-in">
           <div>
@@ -549,7 +556,7 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
         </div>
       )}
 
-      {/* METRICS & PROOF BANNER - Light theme area with super bold contrast */}
+      {/* METRICS & PROOF BANNER */}
       <section id="experience" className="bg-slate-100 border-y border-slate-200 py-16 px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
@@ -606,7 +613,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 </button>
               </div>
             </div>
-            {/* Location highlight */}
             <div className="mt-6 flex gap-3 p-4 bg-slate-50 border border-slate-300 rounded-2xl items-start">
               <MapPin className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
               <div>
@@ -646,7 +652,8 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
         </div>
       </section>
 
-      {/* THE SPECIALTIES / TREATMENTS SECTION (Tabbed showcase) */}
+      {/* THE SPECIALTIES / TREATMENTS SECTION - Dynamic Theme Aware Icons Enabled! */}
+      {}
       <section id="specialties" className="py-24 px-6 md:px-12 bg-slate-50 border-t border-slate-200">
         <div className="max-w-7xl mx-auto">
           
@@ -702,6 +709,7 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
             </div>
 
             {/* Right Panel: Tab Content Display */}
+            {/* FIXED THEME-AWARE COLORING: Icons dynamically reflect chosen color theme profile */}
             <div className="lg:col-span-8 bg-white p-8 md:p-12 rounded-[2.5rem] border border-slate-200 shadow-sm">
               
               {activeTab === 'chronic' && (
@@ -715,25 +723,25 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Advanced Psoriasis & Eczema care</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Asthma & Bronchitis support</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Rheumatoid Arthritis management</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Irritable Bowel Syndrome (IBS) cure</span>
@@ -753,25 +761,25 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Recurrent Tonsillitis & Cough Care</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Childhood Allergy Shielding</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Behavioral & Concentration support</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Sweet Globules (highly liked by kids)</span>
@@ -791,25 +799,25 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Deep Miasmatic Inheritance Audit</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Mental & Temperament Mapping</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">Thermal Preference Auditing</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-950">
+                      <div className={`h-6 w-6 rounded-full ${theme.checkBg} flex items-center justify-center ${theme.checkText}`}>
                         <Check className="h-4 w-4 stroke-[3]" />
                       </div>
                       <span className="text-sm font-black text-slate-800">True Simillimum Selection Method</span>
@@ -825,7 +833,7 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
         </div>
       </section>
 
-      {/* GEMINI PATIENT CO-PILOT CENTER - Beautiful light grid backdrop */}
+      {/* GEMINI PATIENT CO-PILOT CENTER */}
       <section id="ai-copilot" className="py-24 px-6 md:px-12 bg-white border-t border-slate-200">
         <div className="max-w-5xl mx-auto">
           
@@ -844,9 +852,7 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
 
           <div className="bg-slate-50 rounded-3xl border border-slate-300 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
             
-            {/* Left AI Controls Side */}
             <div className="lg:col-span-5 bg-slate-100 p-8 border-r border-slate-200 flex flex-col justify-between">
-              
               <div className="space-y-6">
                 <div className="space-y-2">
                   <h3 className="font-black text-xl text-slate-950 flex items-center gap-2">
@@ -859,7 +865,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 </div>
 
                 <div className="space-y-3">
-                  {/* Tool 1 Toggle */}
                   <button
                     onClick={() => {
                       setAiTool('translator');
@@ -882,7 +887,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                     </p>
                   </button>
 
-                  {/* Tool 2 Toggle */}
                   <button
                     onClick={() => {
                       setAiTool('prep-memo');
@@ -907,17 +911,13 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 </div>
               </div>
 
-              {/* Patient Trust Disclaimer */}
               <div className="mt-8 pt-6 border-t border-slate-300 text-xs text-slate-800 leading-relaxed font-bold flex items-start gap-2">
                 <ShieldCheck className="h-5 w-5 text-emerald-700 shrink-0 mt-0.5" />
                 <span>Information remains private. You can print out the compiled summaries to share directly with Dr. Devendra.</span>
               </div>
-
             </div>
 
-            {/* Right AI Execution Side */}
             <div className="lg:col-span-7 p-8 md:p-10 flex flex-col justify-between min-h-[480px]">
-              
               {!aiResult && !aiLoading && (
                 <form onSubmit={handleAiAction} className="space-y-6 h-full flex flex-col justify-between">
                   <div className="space-y-4">
@@ -954,7 +954,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 </form>
               )}
 
-              {/* Loading State with Sparkles */}
               {aiLoading && (
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-6 h-full my-auto">
                   <div className="relative">
@@ -970,7 +969,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 </div>
               )}
 
-              {/* Error Message */}
               {aiError && (
                 <div className="p-6 bg-red-50 border border-red-200 rounded-2xl space-y-4 animate-fade-in my-auto">
                   <div className="flex items-start gap-3">
@@ -989,7 +987,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 </div>
               )}
 
-              {/* Success Result Panel */}
               {aiResult && !aiLoading && (
                 <div className="space-y-6 animate-fade-in print:p-0">
                   <div className="flex items-center justify-between border-b border-slate-300 pb-4">
@@ -1012,7 +1009,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                     </button>
                   </div>
 
-                  {/* AI Generated Markdown Block */}
                   <div className="prose prose-sm text-slate-900 space-y-4 max-h-[340px] overflow-y-auto pr-2 scrollbar-thin text-sm leading-relaxed font-extrabold">
                     {aiResult.split('\n').map((line, idx) => {
                       if (line.startsWith('### ')) {
@@ -1031,7 +1027,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                       } else if (line.trim() === '') {
                         return <div key={idx} className="h-2" />;
                       } else {
-                        // Bold parsing
                         const parts = line.split('**');
                         return (
                           <p key={idx} className="text-slate-800">
@@ -1067,9 +1062,10 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
       </section>
 
       {/* INTERACTIVE PATIENT TESTIMONIAL SLIDER */}
+      {}
+      {/* FIXED THEME-AWARE STYLES: Active Dots & Highlights match Royal/Emerald/Blue perfectly */}
       <section id="testimonials" className="py-24 px-6 md:px-12 bg-slate-950 text-white relative overflow-hidden">
         
-        {/* Dynamic decorative visual elements */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500 bg-opacity-5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500 bg-opacity-5 rounded-full blur-3xl" />
 
@@ -1080,51 +1076,44 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
             <h2 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">
               Rajahmundry Families Share Their Recovery Stories
             </h2>
-            <div className="h-1 w-20 bg-emerald-500 mx-auto rounded-full mt-4" />
+            <div className={`h-1 w-20 ${theme.dotActive} mx-auto rounded-full mt-4`} />
           </div>
 
-          {/* Testimonial Active Slide Deck */}
           <div className="relative bg-slate-900 border border-slate-800 rounded-[2rem] p-8 md:p-14 shadow-2xl overflow-hidden min-h-[300px] flex flex-col justify-between">
             
             <div className="space-y-6">
-              
-              {/* Star Rating Rendering */}
               <div className="flex justify-center gap-1">
                 {[...Array(testimonials[currentSlide].rating)].map((_, i) => (
                   <Star key={i} className="h-5 w-5 text-amber-400 fill-amber-400" />
                 ))}
               </div>
 
-              {/* Patient Quote with High Contrast */}
               <blockquote className="text-lg md:text-xl font-medium text-slate-150 leading-relaxed max-w-2xl mx-auto italic">
                 "{testimonials[currentSlide].quote}"
               </blockquote>
-
             </div>
 
-            {/* Patient Credentials */}
             <div className="pt-8 mt-8 border-t border-slate-800">
               <cite className="not-italic block">
                 <span className="font-extrabold text-base text-slate-100 block">{testimonials[currentSlide].author}</span>
-                <span className="text-xs text-emerald-400 uppercase tracking-widest font-bold mt-1 block">{testimonials[currentSlide].designation}</span>
+                {/* designation dynamic theme accent highlight applied */}
+                <span className={`text-xs ${theme.highlightText} uppercase tracking-widest font-bold mt-1 block`}>{testimonials[currentSlide].designation}</span>
               </cite>
             </div>
 
-            {/* Slider Navigation Buttons */}
             <div className="flex justify-between items-center mt-8 pt-4">
               
-              {/* Pagination indicators */}
+              {/* Pagination indicators - Uses dynamic dot styling */}
               <div className="flex gap-2">
                 {testimonials.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentSlide(idx)}
-                    className={`h-2.5 rounded-full transition-all ${currentSlide === idx ? 'w-8 bg-emerald-500' : 'w-2.5 bg-slate-700'}`}
+                    className={`h-2.5 rounded-full transition-all ${currentSlide === idx ? `w-8 ${theme.dotActive}` : 'w-2.5 bg-slate-700'}`}
                   />
                 ))}
               </div>
 
-              {/* Direction controls */}
               <div className="flex gap-3">
                 <button
                   onClick={prevSlide}
@@ -1165,7 +1154,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
 
           <div className="bg-slate-50 rounded-[2.5rem] border border-slate-300 p-8 md:p-12 shadow-sm relative overflow-hidden">
             
-            {/* Visual timeline steps */}
             <div className="flex items-center justify-center gap-3 mb-10 text-xs font-black tracking-wider">
               <span className={`px-3.5 py-2 rounded-full transition-all ${bookingStep >= 1 ? theme.primary : 'bg-slate-200 text-slate-800'}`}>1. Select Service</span>
               <span className="text-slate-300">—</span>
@@ -1174,7 +1162,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
               <span className={`px-3.5 py-2 rounded-full transition-all ${bookingStep >= 3 ? theme.primary : 'bg-slate-200 text-slate-800'}`}>3. Patient Info</span>
             </div>
 
-            {/* Step Content */}
             {!isBooked ? (
               <form onSubmit={handleBookingSubmit} className="space-y-6">
                 
@@ -1220,7 +1207,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                     <h4 className="text-lg font-black text-slate-900">Select Date & Time Slot:</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       
-                      {/* Date Picker Input */}
                       <div>
                         <label className="block text-xs font-bold text-slate-850 mb-2 uppercase tracking-widest">Appointment Date</label>
                         <input 
@@ -1232,7 +1218,6 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                         />
                       </div>
 
-                      {/* Time Slot Picker */}
                       <div>
                         <label className="block text-xs font-bold text-slate-850 mb-2 uppercase tracking-widest">Available Times</label>
                         <div className="grid grid-cols-2 gap-2">
@@ -1354,7 +1339,7 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-2xl font-black text-slate-950">Consultation Confirmed!</h3>
-                  <p className="text-sm text-slate-700 max-w-md mx-auto leading-relaxed font-bold">
+                  <p className="text-sm text-slate-700 max-w-md mx-auto leading-relaxed font-semibold">
                     Thank you, <strong className="text-slate-950">{clientInfo.name}</strong>. Dr. Devendra Kumar's clinical desk at Rajahmundry will review your details for <strong className="text-slate-950">{selectedService}</strong> on <strong className="text-slate-950">{selectedDate}</strong> at <strong className="text-slate-950">{selectedTime}</strong> and SMS a confirmation code shortly.
                   </p>
                 </div>
@@ -1373,6 +1358,7 @@ Tone: Reassuring, extremely clear, and organized for high-trust professional rea
       </section>
 
       {/* FOOTER */}
+      {}
       <footer className="bg-slate-950 text-slate-300 py-16 px-6 md:px-12 border-t border-slate-900">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 mb-12">
           
