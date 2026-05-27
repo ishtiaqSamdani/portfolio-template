@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Star, 
   Check, 
@@ -274,7 +274,7 @@ Your task is to take a patient's unstructured descriptions of their chronic issu
         .custom-cursor-ball {
           background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0.4) 40%, rgba(255,255,255,0.15) 70%);
           border: 1px solid rgba(255,255,255,0.6);
-          box-shadow: 0 10px 24px rgba(0,0,0,0.2), inset 0 0 10px rgba(255,255,255,0.55);
+          box-shadow: 0 10px 24px rgba(0,0,0,0.2), inset 0 0 10px rgba(255,255,255,0.55), 0 0 0 1px rgba(0,0,0,0.2);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
         }
@@ -292,6 +292,7 @@ Your task is to take a patient's unstructured descriptions of their chronic issu
 
       <div
         className="custom-cursor fixed pointer-events-none z-50 -translate-x-1/2 -translate-y-1/2 transition-transform duration-75 ease-out"
+        aria-hidden="true"
         style={{
           left: `${mousePos.x}px`,
           top: `${mousePos.y}px`
