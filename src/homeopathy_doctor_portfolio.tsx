@@ -44,9 +44,20 @@ export default function App() {
   // Video modal state
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
-  // Interactive mouse position tracking for premium custom cursor
+  // Custom glass cursor tracking
   const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
-  const [isHovering, setIsHovering] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
 
   // --- GEMINI CO-PILOT STATE VARIABLES ---
   const [aiTool, setAiTool] = useState('translator'); 
@@ -54,28 +65,6 @@ export default function App() {
   const [aiResult, setAiResult] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
-    };
-
-    const handleMouseOver = (e) => {
-      if (e.target.closest('a, button, [role="button"], input, textarea, select')) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseover', handleMouseOver);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseover', handleMouseOver);
-    };
-  }, []);
 
   const themes = {
     blue: {
@@ -276,26 +265,61 @@ Your task is to take a patient's unstructured descriptions of their chronic issu
   return (
     <div className="min-h-screen bg-[#FDFDFD] font-sans text-slate-900 selection:bg-slate-900 selection:text-white transition-colors duration-500">
       
-      {/* Dynamic Cursor Hider Style - Disables standard mouse pointer to enable ultra-premium feedback on desktop */}
+      {/* Dynamic Cursor Replacement */}
       <style>{`
-        @media (min-width: 1024px) {
+        .custom-cursor {
+          display: none;
+        }
+
+        .custom-cursor-ball {
+          background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0.4) 40%, rgba(255,255,255,0.15) 70%);
+          border: 1px solid rgba(255,255,255,0.7);
+          box-shadow: 0 10px 24px rgba(0,0,0,0.25), inset 0 0 10px rgba(255,255,255,0.55), 0 0 0 1px rgba(0,0,0,0.35);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .custom-cursor {
+            transition: none;
+          }
+
+          .custom-cursor-ball {
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+          }
+        }
+
+        @media (prefers-contrast: more) {
+          .custom-cursor-ball {
+            background: rgba(255,255,255,0.95);
+            border: 2px solid rgba(0,0,0,0.85);
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.65);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+          }
+        }
+
+        @media (hover: hover) and (pointer: fine) {
           body, a, button, select, input, textarea, [role="button"] {
             cursor: none !important;
+          }
+
+          .custom-cursor {
+            display: block;
           }
         }
       `}</style>
 
-      {/* Custom Interactive Floating Cursor */}
-      <div 
-        className="hidden lg:block fixed pointer-events-none z-50 transition-transform duration-100 ease-out -translate-x-1/2 -translate-y-1/2"
-        style={{ 
-          left: `${mousePos.x}px`, 
-          top: `${mousePos.y}px`,
-          transform: `translate(-50%, -50%) scale(${isHovering ? 1.5 : 1})`
+      <div
+        className="custom-cursor fixed pointer-events-none z-50 -translate-x-1/2 -translate-y-1/2 transition-transform duration-75 ease-out"
+        aria-hidden="true"
+        style={{
+          left: `${mousePos.x}px`,
+          top: `${mousePos.y}px`
         }}
       >
-        <div className={`w-8 h-8 rounded-full border border-current opacity-30 animate-pulse transition-all duration-300 ${theme.primaryText}`} />
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-current ${theme.primaryText}`} />
+        <div className="custom-cursor-ball w-6 h-6 rounded-full" />
       </div>
 
       {/* SELLER CONTROL BAR - Dynamic Theme Switcher & Value Prop */}
