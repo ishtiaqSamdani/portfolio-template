@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Star, 
   Check, 
@@ -44,38 +44,12 @@ export default function App() {
   // Video modal state
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
-  // Interactive mouse position tracking for premium custom cursor
-  const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
-  const [isHovering, setIsHovering] = useState(false);
-
   // --- GEMINI CO-PILOT STATE VARIABLES ---
   const [aiTool, setAiTool] = useState('translator'); 
   const [aiInput, setAiInput] = useState('');
   const [aiResult, setAiResult] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
-    };
-
-    const handleMouseOver = (e) => {
-      if (e.target.closest('a, button, [role="button"], input, textarea, select')) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseover', handleMouseOver);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseover', handleMouseOver);
-    };
-  }, []);
 
   const themes = {
     blue: {
@@ -276,28 +250,6 @@ Your task is to take a patient's unstructured descriptions of their chronic issu
   return (
     <div className="min-h-screen bg-[#FDFDFD] font-sans text-slate-900 selection:bg-slate-900 selection:text-white transition-colors duration-500">
       
-      {/* Dynamic Cursor Hider Style - Disables standard mouse pointer to enable ultra-premium feedback on desktop */}
-      <style>{`
-        @media (min-width: 1024px) {
-          body, a, button, select, input, textarea, [role="button"] {
-            cursor: none !important;
-          }
-        }
-      `}</style>
-
-      {/* Custom Interactive Floating Cursor */}
-      <div 
-        className="hidden lg:block fixed pointer-events-none z-50 transition-transform duration-100 ease-out -translate-x-1/2 -translate-y-1/2"
-        style={{ 
-          left: `${mousePos.x}px`, 
-          top: `${mousePos.y}px`,
-          transform: `translate(-50%, -50%) scale(${isHovering ? 1.5 : 1})`
-        }}
-      >
-        <div className={`w-8 h-8 rounded-full border border-current opacity-30 animate-pulse transition-all duration-300 ${theme.primaryText}`} />
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-current ${theme.primaryText}`} />
-      </div>
-
       {/* SELLER CONTROL BAR - Dynamic Theme Switcher & Value Prop */}
       <div className="bg-slate-950 text-slate-300 py-3.5 px-4 text-xs sticky top-0 z-50 border-b border-slate-800 shadow-md backdrop-blur-md bg-opacity-95">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
